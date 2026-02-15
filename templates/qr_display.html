@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code - {{ student.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .qr-card {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            text-align: center;
+        }
+        .qr-code-img {
+            max-width: 300px;
+            margin: 20px auto;
+            border: 3px solid #0d6efd;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .student-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="qr-card">
+            <h2 class="mb-4"><i class="fas fa-qrcode"></i> QR Code Absensi</h2>
+            
+            <div class="student-info">
+                <h4>{{ student.name }}</h4>
+                <p class="mb-1"><strong>ID:</strong> {{ student.id }}</p>
+                {% if student.class %}
+                <p class="mb-0"><strong>Kelas:</strong> {{ student.class }}</p>
+                {% endif %}
+            </div>
+            
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="qr-code-img img-fluid">
+            
+            <div class="alert alert-info no-print">
+                <i class="fas fa-info-circle"></i> Scan QR Code ini untuk absensi cepat
+            </div>
+            
+            <div class="no-print">
+                <button onclick="window.print()" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-print"></i> Cetak
+                </button>
+                <button onclick="downloadQR()" class="btn btn-success btn-lg">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <a href="{{ url_for('admin') }}" class="btn btn-secondary btn-lg ms-2">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadQR() {
+            const link = document.createElement('a');
+            link.href = 'data:image/png;base64,{{ qr_code }}';
+            link.download = 'qr_{{ student.id }}_{{ student.name }}.png';
+            link.click();
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

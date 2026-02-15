@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola User - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="animated-bg">
+    <div class="container py-5">
+        <div class="glass-card p-5" style="max-width: 1000px; margin: 0 auto;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-shield"></i> Kelola User</h2>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Role Information -->
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> Penjelasan Role:</h6>
+                <ul class="mb-0">
+                    <li><strong>Super Admin:</strong> Akses penuh sistem (kelola user, pengaturan, semua fitur)</li>
+                    <li><strong>Admin:</strong> Kelola siswa, absensi, approve izin, export data</li>
+                    <li><strong>Teacher:</strong> Lihat absensi, export data (tidak bisa kelola siswa)</li>
+                    <li><strong>Viewer:</strong> Hanya dapat melihat data absensi</li>
+                </ul>
+            </div>
+            
+            <!-- Add User Form -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-plus"></i> Tambah User Baru</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_user') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" name="password" required minlength="6">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="role" required>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_admin">Super Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> Tambah User
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Users List -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Daftar User ({{ users|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Dibuat</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-user"></i> {{ user.username }}
+                                        {% if user.username == session.username %}
+                                        <span class="badge bg-info">Anda</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if user.role == 'super_admin' else 'primary' if user.role == 'admin' else 'success' if user.role == 'teacher' else 'secondary' }}">
+                                            {{ user.role|upper|replace('_', ' ') }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user.created_at if user.created_at else '-' }}</td>
+                                    <td>
+                                        <!-- Change Role -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changeRoleModal{{ loop.index }}" {% if user.username == session.username %}disabled{% endif %}>
+                                                <i class="fas fa-exchange-alt"></i> Role
+                                            </button>
+                                            
+                                            <!-- Delete User -->
+                                            <form method="POST" action="{{ url_for('delete_user', username=user.username) }}" style="display: inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-danger" {% if user.username == session.username %}disabled{% endif %} onclick="return confirm('Hapus user {{ user.username }}?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        
+                                        <!-- Change Role Modal -->
+                                        <div class="modal fade" id="changeRoleModal{{ loop.index }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Ubah Role: {{ user.username }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="POST" action="{{ url_for('change_user_role', username=user.username) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-body">
+                                                            <label class="form-label">Role Baru</label>
+                                                            <select class="form-select" name="new_role" required>
+                                                                <option value="viewer" {{ 'selected' if user.role == 'viewer' else '' }}>Viewer</option>
+                                                                <option value="teacher" {{ 'selected' if user.role == 'teacher' else '' }}>Teacher</option>
+                                                                <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
+                                                                <option value="super_admin" {{ 'selected' if user.role == 'super_admin' else '' }}>Super Admin</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-warning">Ubah Role</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

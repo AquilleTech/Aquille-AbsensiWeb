@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="animated-bg">
+    <div class="container py-5">
+        <div class="glass-card p-5" style="max-width: 900px; margin: 0 auto;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-cog"></i> Pengaturan Sistem</h2>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- General Settings -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-building"></i> Pengaturan Umum</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Sekolah/Institusi</label>
+                            <input type="text" class="form-control" name="school_name" value="{{ settings.school_name }}" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Waktu Mulai Absensi</label>
+                                <input type="time" class="form-control" name="attendance_start_time" value="{{ settings.attendance_start_time }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Waktu Akhir Absensi</label>
+                                <input type="time" class="form-control" name="attendance_end_time" value="{{ settings.attendance_end_time }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Batas Waktu Terlambat</label>
+                                <input type="time" class="form-control" name="late_time" value="{{ settings.late_time }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Warna Tema</label>
+                            <select class="form-select" name="theme_color">
+                                <option value="blue" {{ 'selected' if settings.theme_color == 'blue' else '' }}>Biru</option>
+                                <option value="green" {{ 'selected' if settings.theme_color == 'green' else '' }}>Hijau</option>
+                                <option value="purple" {{ 'selected' if settings.theme_color == 'purple' else '' }}>Ungu</option>
+                                <option value="red" {{ 'selected' if settings.theme_color == 'red' else '' }}>Merah</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feature Toggles -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-toggle-on"></i> Fitur Sistem</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="enable_qr" name="enable_qr" {{ 'checked' if settings.enable_qr else '' }}>
+                            <label class="form-check-label" for="enable_qr">
+                                <strong>Aktifkan QR Code Check-in</strong>
+                                <br><small class="text-muted">Siswa dapat check-in menggunakan QR code</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="enable_leave" name="enable_leave" {{ 'checked' if settings.enable_leave else '' }}>
+                            <label class="form-check-label" for="enable_leave">
+                                <strong>Aktifkan Pengajuan Izin</strong>
+                                <br><small class="text-muted">Siswa dapat mengajukan izin/sakit secara online</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="enable_late_tracking" name="enable_late_tracking" {{ 'checked' if settings.enable_late_tracking else '' }}>
+                            <label class="form-check-label" for="enable_late_tracking">
+                                <strong>Aktifkan Tracking Keterlambatan</strong>
+                                <br><small class="text-muted">Sistem akan membedakan status Hadir dan Terlambat</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Telegram Bot Settings -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fab fa-telegram"></i> Notifikasi Telegram</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="telegram_enabled" name="telegram_enabled" {{ 'checked' if settings.telegram_enabled else '' }}>
+                            <label class="form-check-label" for="telegram_enabled">
+                                <strong>Aktifkan Telegram Bot</strong>
+                            </label>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i> <strong>Cara Setup Telegram Bot:</strong><br>
+                            1. Chat dengan <a href="https://t.me/BotFather" target="_blank">@BotFather</a> di Telegram<br>
+                            2. Ketik /newbot dan ikuti instruksi<br>
+                            3. Copy Bot Token yang diberikan<br>
+                            4. Chat dengan bot Anda, ketik /start<br>
+                            5. Buka <a href="https://api.telegram.org/bot<TOKEN>/getUpdates" target="_blank">link ini</a> (ganti &lt;TOKEN&gt; dengan bot token)<br>
+                            6. Copy nilai "id" dari "chat" sebagai Chat ID
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Bot Token</label>
+                            <input type="text" class="form-control" name="telegram_bot_token" value="{{ settings.telegram_bot_token }}" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Admin Chat ID</label>
+                            <input type="text" class="form-control" name="telegram_admin_chat_id" value="{{ settings.telegram_admin_chat_id }}" placeholder="123456789">
+                        </div>
+                        
+                        <button type="button" class="btn btn-info mb-3" onclick="testTelegram()">
+                            <i class="fas fa-paper-plane"></i> Test Koneksi
+                        </button>
+                        <div id="test-result"></div>
+                        
+                        <hr>
+                        <h6>Notifikasi Yang Diaktifkan:</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="telegram_notify_checkin" name="telegram_notify_checkin" {{ 'checked' if settings.telegram_notify_checkin else '' }}>
+                            <label class="form-check-label" for="telegram_notify_checkin">
+                                Check-in Siswa (Hadir)
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="telegram_notify_late" name="telegram_notify_late" {{ 'checked' if settings.telegram_notify_late else '' }}>
+                            <label class="form-check-label" for="telegram_notify_late">
+                                Siswa Terlambat
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="telegram_notify_absent" name="telegram_notify_absent" {{ 'checked' if settings.telegram_notify_absent else '' }}>
+                            <label class="form-check-label" for="telegram_notify_absent">
+                                Laporan Siswa Tidak Hadir (End of Day)
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="telegram_notify_leave" name="telegram_notify_leave" {{ 'checked' if settings.telegram_notify_leave else '' }}>
+                            <label class="form-check-label" for="telegram_notify_leave">
+                                Pengajuan Izin Baru
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-save"></i> Simpan Pengaturan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function testTelegram() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Mengirim pesan test...';
+            
+            fetch('{{ url_for("test_telegram") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error: ' + error + '</div>';
+            });
+        }
+    </script>
+</body>
+</html>

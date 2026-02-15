@@ -1,0 +1,21 @@
+[Unit]
+Description=Absensi Web Application
+After=network.target
+
+[Service]
+Type=notify
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+RuntimeDirectory=absensi-web
+WorkingDirectory=/path/to/absensiweb_production
+Environment="PATH=/path/to/absensiweb_production/venv/bin"
+ExecStart=/path/to/absensiweb_production/venv/bin/gunicorn -c gunicorn_config.py wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
